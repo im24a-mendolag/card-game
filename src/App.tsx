@@ -25,6 +25,7 @@ function joinRoom(code: string): string {
 
 export default function App() {
   const [roomId, setRoomId] = useState<string | null>(getInitialRoomId)
+  const [pendingName, setPendingName] = useState<string>('')
 
   const {
     state,
@@ -49,8 +50,8 @@ export default function App() {
     return (
       <div style={{ width: '100%', height: '100%' }}>
         <Home
-          onCreate={() => setRoomId(createRoom())}
-          onJoin={code => setRoomId(joinRoom(code))}
+          onCreate={name => { setPendingName(name); setRoomId(createRoom()) }}
+          onJoin={(code, name) => { setPendingName(name); setRoomId(joinRoom(code)) }}
         />
       </div>
     )
@@ -67,6 +68,7 @@ export default function App() {
           onAddBot={addBot}
           onStart={startGame}
           roomId={roomId}
+          initialName={pendingName}
         />
       </div>
     )

@@ -17,7 +17,6 @@ interface ServerState {
   connToPlayerId: Record<string, string>
   chancellorPool: Card[]
   chancellorActorId: string | null
-  pendingReveal: { forPlayerId: string; card: Card; targetId: string } | null
 }
 
 function makeInitialState(): ServerState {
@@ -40,7 +39,6 @@ function makeInitialState(): ServerState {
     connToPlayerId: {},
     chancellorPool: [],
     chancellorActorId: null,
-    pendingReveal: null,
   }
 }
 
@@ -137,7 +135,7 @@ export default class LoveLetterServer implements Party.Server {
   }
 
   private broadcast() {
-    const { game, playerHands, chancellorPool, chancellorActorId, pendingReveal } = this.state
+    const { game, playerHands, chancellorPool, chancellorActorId } = this.state
     for (const conn of this.room.getConnections()) {
       const playerId = this.state.connToPlayerId[conn.id]
       const yourHand = playerId ? (playerHands[playerId] ?? []) : []
@@ -147,13 +145,18 @@ export default class LoveLetterServer implements Party.Server {
         state: game,
         yourHand,
         chancellorOptions: isChancellorActor ? chancellorPool : undefined,
-        revealedCard: pendingReveal?.forPlayerId === playerId ? pendingReveal.card : undefined,
-        revealedFromId: pendingReveal?.forPlayerId === playerId ? pendingReveal.targetId : undefined,
       }
       conn.send(JSON.stringify(msg))
     }
-    // Clear after sending so it only shows once
-    this.state.pendingReveal = null
+  }
+
+  private sendToPlayer(playerId: string, msg: ServerMessage) {
+    for (const conn of this.room.getConnections()) {
+      if (this.state.connToPlayerId[conn.id] === playerId) {
+        conn.send(JSON.stringify(msg))
+        break
+      }
+    }
   }
 
   private sendError(conn: Party.Connection, message: string) {
@@ -366,11 +369,13 @@ export default class LoveLetterServer implements Party.Server {
 
     this.state.game.players = this.state.game.players.map(p => {
       if (p.id === playerId) {
+        const selfEliminated = result.eliminatedId === playerId
         return {
           ...p,
           discardPile: [...p.discardPile, played],
           isProtected: played.name === 'Handmaid',
-          hand: this.state.playerHands[p.id] ?? [],
+          isEliminated: selfEliminated,
+          hand: selfEliminated ? [] : (this.state.playerHands[p.id] ?? []),
         }
       }
       if (p.id === result.eliminatedId) return { ...p, isEliminated: true, hand: [] }
@@ -381,7 +386,7 @@ export default class LoveLetterServer implements Party.Server {
     this.state.game.lastAction = result.log
 
     if (result.revealedCard && targetPlayerId) {
-      this.state.pendingReveal = { forPlayerId: playerId, card: result.revealedCard, targetId: targetPlayerId }
+      this.sendToPlayer(playerId, { type: 'peek', card: result.revealedCard, fromId: targetPlayerId })
     }
 
     if (result.chancellorOptions && result.chancellorOptions.length > 0) {

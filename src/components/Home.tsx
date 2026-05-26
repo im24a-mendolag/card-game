@@ -1,18 +1,27 @@
 import { useState } from 'react'
 
 interface Props {
-  onCreate: () => void
-  onJoin: (code: string) => void
+  onCreate: (name: string) => void
+  onJoin: (code: string, name: string) => void
 }
 
 export function Home({ onCreate, onJoin }: Props) {
+  const [name, setName] = useState('')
   const [code, setCode] = useState('')
   const [joining, setJoining] = useState(false)
 
+  const trimmedName = name.trim()
+  const canProceed = trimmedName.length > 0
+
+  const handleCreate = () => {
+    if (!canProceed) return
+    onCreate(trimmedName)
+  }
+
   const handleJoin = () => {
-    const trimmed = code.trim().toUpperCase()
-    if (trimmed.length < 3) return
-    onJoin(trimmed)
+    const trimmedCode = code.trim().toUpperCase()
+    if (!canProceed || trimmedCode.length < 3) return
+    onJoin(trimmedCode, trimmedName)
   }
 
   return (
@@ -52,21 +61,50 @@ export function Home({ onCreate, onJoin }: Props) {
       {/* Action cards */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 360 }}>
 
+        {/* Name input */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ fontSize: 11, opacity: 0.5, letterSpacing: 2, textAlign: 'center' }}>YOUR NAME</div>
+          <input
+            autoFocus
+            type="text"
+            maxLength={16}
+            placeholder="Enter your name…"
+            value={name}
+            onChange={e => setName(e.target.value)}
+            onKeyDown={e => e.key === 'Enter' && !joining && handleCreate()}
+            style={{
+              padding: '13px 16px',
+              borderRadius: 12,
+              border: '1px solid rgba(255,255,255,0.2)',
+              background: 'rgba(255,255,255,0.08)',
+              color: '#f5f0e8',
+              fontSize: 16,
+              textAlign: 'center',
+              outline: 'none',
+              fontFamily: 'inherit',
+            }}
+          />
+        </div>
+
         {/* Create room */}
         <button
-          onClick={onCreate}
+          onClick={handleCreate}
+          disabled={!canProceed}
           style={{
             padding: '18px 24px',
             borderRadius: 14,
-            background: 'linear-gradient(135deg, #4caf50, #2e7d32)',
-            color: '#fff',
+            background: canProceed
+              ? 'linear-gradient(135deg, #4caf50, #2e7d32)'
+              : 'rgba(255,255,255,0.07)',
+            color: canProceed ? '#fff' : 'rgba(255,255,255,0.3)',
             fontSize: 17,
             fontWeight: 'bold',
             letterSpacing: 1,
-            boxShadow: '0 4px 20px rgba(76,175,80,0.35)',
+            boxShadow: canProceed ? '0 4px 20px rgba(76,175,80,0.35)' : 'none',
             border: 'none',
-            cursor: 'pointer',
+            cursor: canProceed ? 'pointer' : 'default',
             textAlign: 'center',
+            transition: 'all 0.15s',
           }}
         >
           🎲 Create New Room
@@ -82,18 +120,20 @@ export function Home({ onCreate, onJoin }: Props) {
         {/* Join with code */}
         {!joining ? (
           <button
-            onClick={() => setJoining(true)}
+            onClick={() => canProceed && setJoining(true)}
+            disabled={!canProceed}
             style={{
               padding: '18px 24px',
               borderRadius: 14,
-              background: 'rgba(240,192,64,0.12)',
-              color: '#f0c040',
+              background: canProceed ? 'rgba(240,192,64,0.12)' : 'rgba(255,255,255,0.04)',
+              color: canProceed ? '#f0c040' : 'rgba(255,255,255,0.2)',
               fontSize: 17,
               fontWeight: 'bold',
               letterSpacing: 1,
-              border: '1px solid rgba(240,192,64,0.35)',
-              cursor: 'pointer',
+              border: canProceed ? '1px solid rgba(240,192,64,0.35)' : '1px solid rgba(255,255,255,0.08)',
+              cursor: canProceed ? 'pointer' : 'default',
               textAlign: 'center',
+              transition: 'all 0.15s',
             }}
           >
             🔑 Join with Code

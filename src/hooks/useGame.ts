@@ -64,10 +64,9 @@ export function useGame(roomId: string | null): GameHook {
         setState(msg.state)
         setYourHand(msg.yourHand)
         setChancellorOptions(msg.chancellorOptions ?? null)
-        if (msg.revealedCard) {
-          setRevealedCard(msg.revealedCard)
-          setRevealedFromId(msg.revealedFromId ?? null)
-        }
+      } else if (msg.type === 'peek') {
+        setRevealedCard(msg.card)
+        setRevealedFromId(msg.fromId)
       } else if (msg.type === 'error') {
         setErrorMsg(msg.message)
       }

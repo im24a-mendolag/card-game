@@ -10,6 +10,7 @@ interface Props {
   onStart: () => void
   onAddBot: () => void
   roomId: string
+  initialName?: string
 }
 
 const TOKENS_TO_WIN: Record<number, number> = { 2: 6, 3: 5, 4: 4 }
@@ -69,8 +70,8 @@ function PlayerRow({ player, isMe }: { player: Player; isMe: boolean }) {
   )
 }
 
-export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, onAddBot, roomId }: Props) {
-  const [name, setName] = useState('')
+export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, onAddBot, roomId, initialName = '' }: Props) {
+  const [name, setName] = useState(initialName)
   const [joined, setJoined] = useState(false)
 
   const me = state?.players.find(p => p.id === myPlayerId)
@@ -78,6 +79,14 @@ export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, on
   useEffect(() => {
     if (me) setJoined(true)
   }, [me])
+
+  // Auto-join once connected when name was pre-filled from Home
+  useEffect(() => {
+    if (initialName && connectionStatus === 'connected' && !joined && !me) {
+      onJoin(initialName)
+      setJoined(true)
+    }
+  }, [connectionStatus, initialName, joined, me, onJoin])
 
   const handleJoin = () => {
     if (!name.trim()) return
