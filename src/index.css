@@ -1,0 +1,47 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --green-felt: #1a5c2a;
+  --green-dark: #124020;
+  --green-light: #2a7a3a;
+  --gold: #f0c040;
+  --gold-dark: #c89820;
+  --card-shadow: rgba(0,0,0,0.4);
+  --text-light: #f5f0e8;
+  --text-muted: rgba(245,240,232,0.6);
+  --sidebar-bg: rgba(0,0,0,0.35);
+  --panel-bg: rgba(0,0,0,0.25);
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  font-family: 'Georgia', 'Times New Roman', serif;
+  background: var(--green-felt);
+  color: var(--text-light);
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  display: flex;
+  min-height: 100svh;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+
+input, select {
+  font-family: inherit;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
