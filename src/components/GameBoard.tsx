@@ -50,9 +50,6 @@ export function GameBoard({
     [handCard, drawnCard].some(c => c.name === 'Countess') &&
     [handCard, drawnCard].some(c => c.name === 'King' || c.name === 'Prince')
   ))
-  const countessIndex = mustPlayCountess
-    ? (handCard?.name === 'Countess' ? 0 : 1)
-    : null
 
   const handleCardClick = (card: Card, index: number) => {
     if (!isMyTurn || state.phase !== 'playing' || !state.drawnCard) return
