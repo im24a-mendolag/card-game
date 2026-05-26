@@ -1,19 +1,30 @@
 import { useState } from 'react'
 import { useGame } from './hooks/useGame'
+import { Home } from './components/Home'
 import { Lobby } from './components/Lobby'
 import { GameBoard } from './components/GameBoard'
 import { RoundEnd } from './components/RoundEnd'
 
-function getRoomId(): string {
-  const hash = window.location.hash.slice(1)
-  if (hash) return hash
+function getInitialRoomId(): string | null {
+  const hash = window.location.hash.slice(1).trim()
+  return hash.length > 0 ? hash : null
+}
+
+function createRoom(): string {
   const id = Math.random().toString(36).slice(2, 7).toUpperCase()
   window.location.hash = id
   return id
 }
 
+function joinRoom(code: string): string {
+  const id = code.toUpperCase()
+  window.location.hash = id
+  return id
+}
+
 export default function App() {
-  const [roomId] = useState(getRoomId)
+  const [roomId, setRoomId] = useState<string | null>(getInitialRoomId)
+
   const {
     state,
     yourHand,
@@ -27,7 +38,19 @@ export default function App() {
     chancellorKeep,
     nextRound,
     clearError,
-  } = useGame(roomId)
+  } = useGame(roomId ?? '__placeholder__')
+
+  // No room selected yet — show home screen
+  if (!roomId) {
+    return (
+      <div style={{ width: '100%', height: '100%' }}>
+        <Home
+          onCreate={() => setRoomId(createRoom())}
+          onJoin={code => setRoomId(joinRoom(code))}
+        />
+      </div>
+    )
+  }
 
   if (!state || state.phase === 'lobby') {
     return (
