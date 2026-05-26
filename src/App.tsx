@@ -31,6 +31,7 @@ export default function App() {
     myPlayerId,
     chancellorOptions,
     errorMsg,
+    connectionStatus,
     join,
     addBot,
     startGame,
@@ -57,6 +58,7 @@ export default function App() {
         <Lobby
           state={state}
           myPlayerId={myPlayerId}
+          connectionStatus={connectionStatus}
           onJoin={join}
           onAddBot={addBot}
           onStart={startGame}

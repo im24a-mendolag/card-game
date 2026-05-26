@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react'
 import type { GameState, Player } from '../types'
+import type { ConnectionStatus } from '../hooks/useGame'
 
 interface Props {
   state: GameState | null
   myPlayerId: string | null
+  connectionStatus: ConnectionStatus
   onJoin: (name: string) => void
   onStart: () => void
   onAddBot: () => void
@@ -67,7 +69,7 @@ function PlayerRow({ player, isMe }: { player: Player; isMe: boolean }) {
   )
 }
 
-export function Lobby({ state, myPlayerId, onJoin, onStart, onAddBot, roomId }: Props) {
+export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, onAddBot, roomId }: Props) {
   const [name, setName] = useState('')
   const [joined, setJoined] = useState(false)
 
@@ -136,7 +138,26 @@ export function Lobby({ state, myPlayerId, onJoin, onStart, onAddBot, roomId }: 
           {roomId.toUpperCase()}
         </div>
         <div style={{ fontSize: 11, opacity: 0.5, marginTop: 4 }}>Share this code with friends</div>
+        {/* Connection status */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 8 }}>
+          <div
+            style={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              background: connectionStatus === 'connected' ? '#4caf50' : connectionStatus === 'disconnected' ? '#e53935' : '#f0c040',
+              boxShadow: `0 0 6px ${connectionStatus === 'connected' ? '#4caf50' : connectionStatus === 'disconnected' ? '#e53935' : '#f0c040'}`,
+              animation: connectionStatus === 'connecting' ? 'pulse 1s infinite' : 'none',
+            }}
+          />
+          <span style={{ fontSize: 11, opacity: 0.6 }}>
+            {connectionStatus === 'connected' ? 'Connected to server'
+              : connectionStatus === 'disconnected' ? 'Cannot reach server — check deployment'
+              : 'Connecting to server…'}
+          </span>
+        </div>
       </div>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }`}</style>
 
       {/* Main panel */}
       <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 16 }}>

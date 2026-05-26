@@ -2,12 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import PartySocket from 'partysocket'
 import type { Card, CardName, ClientMessage, GameState, ServerMessage } from '../types'
 
+export type ConnectionStatus = 'connecting' | 'connected' | 'disconnected'
+
 export interface GameHook {
   state: GameState | null
   yourHand: Card[]
   myPlayerId: string | null
   chancellorOptions: Card[] | null
   errorMsg: string | null
+  connectionStatus: ConnectionStatus
   join: (name: string) => void
   addBot: () => void
   startGame: () => void
@@ -23,18 +26,18 @@ export function useGame(roomId: string | null): GameHook {
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
   const [chancellorOptions, setChancellorOptions] = useState<Card[] | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const socketRef = useRef<PartySocket | null>(null)
 
   useEffect(() => {
-    // Don't connect until we have a real room
     if (!roomId) return
 
-    // Reset all state for the new room
     setState(null)
     setYourHand([])
     setMyPlayerId(null)
     setChancellorOptions(null)
     setErrorMsg(null)
+    setConnectionStatus('connecting')
 
     const socket = new PartySocket({
       host: import.meta.env.VITE_PARTYKIT_HOST ?? 'localhost:1999',
@@ -44,7 +47,11 @@ export function useGame(roomId: string | null): GameHook {
 
     socket.addEventListener('open', () => {
       setMyPlayerId(socket.id)
+      setConnectionStatus('connected')
     })
+
+    socket.addEventListener('close', () => setConnectionStatus('disconnected'))
+    socket.addEventListener('error', () => setConnectionStatus('disconnected'))
 
     socket.addEventListener('message', (event: MessageEvent) => {
       const msg = JSON.parse(event.data as string) as ServerMessage
@@ -86,5 +93,5 @@ export function useGame(roomId: string | null): GameHook {
   const nextRound = useCallback(() => send({ type: 'nextRound' }), [send])
   const clearError = useCallback(() => setErrorMsg(null), [])
 
-  return { state, yourHand, myPlayerId, chancellorOptions, errorMsg, join, addBot, startGame, playCard, chancellorKeep, nextRound, clearError }
+  return { state, yourHand, myPlayerId, chancellorOptions, errorMsg, connectionStatus, join, addBot, startGame, playCard, chancellorKeep, nextRound, clearError }
 }
