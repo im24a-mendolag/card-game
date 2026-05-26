@@ -17,7 +17,7 @@ export interface GameHook {
   clearError: () => void
 }
 
-export function useGame(roomId: string): GameHook {
+export function useGame(roomId: string | null): GameHook {
   const [state, setState] = useState<GameState | null>(null)
   const [yourHand, setYourHand] = useState<Card[]>([])
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
@@ -26,6 +26,16 @@ export function useGame(roomId: string): GameHook {
   const socketRef = useRef<PartySocket | null>(null)
 
   useEffect(() => {
+    // Don't connect until we have a real room
+    if (!roomId) return
+
+    // Reset all state for the new room
+    setState(null)
+    setYourHand([])
+    setMyPlayerId(null)
+    setChancellorOptions(null)
+    setErrorMsg(null)
+
     const socket = new PartySocket({
       host: import.meta.env.VITE_PARTYKIT_HOST ?? 'localhost:1999',
       room: roomId,
@@ -47,7 +57,10 @@ export function useGame(roomId: string): GameHook {
       }
     })
 
-    return () => socket.close()
+    return () => {
+      socket.close()
+      socketRef.current = null
+    }
   }, [roomId])
 
   const send = useCallback((msg: ClientMessage) => {

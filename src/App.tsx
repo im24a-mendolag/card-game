@@ -7,7 +7,7 @@ import { RoundEnd } from './components/RoundEnd'
 
 function getInitialRoomId(): string | null {
   const hash = window.location.hash.slice(1).trim()
-  return hash.length > 0 ? hash : null
+  return hash.length > 0 ? hash.toUpperCase() : null
 }
 
 function createRoom(): string {
@@ -38,9 +38,8 @@ export default function App() {
     chancellorKeep,
     nextRound,
     clearError,
-  } = useGame(roomId ?? '__placeholder__')
+  } = useGame(roomId)
 
-  // No room selected yet — show home screen
   if (!roomId) {
     return (
       <div style={{ width: '100%', height: '100%' }}>
