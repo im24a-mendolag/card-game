@@ -17,6 +17,7 @@ interface ServerState {
   connToPlayerId: Record<string, string>
   chancellorPool: Card[]
   chancellorActorId: string | null
+  pendingReveal: { forPlayerId: string; card: Card; targetId: string } | null
 }
 
 function makeInitialState(): ServerState {
@@ -39,6 +40,7 @@ function makeInitialState(): ServerState {
     connToPlayerId: {},
     chancellorPool: [],
     chancellorActorId: null,
+    pendingReveal: null,
   }
 }
 
@@ -135,7 +137,7 @@ export default class LoveLetterServer implements Party.Server {
   }
 
   private broadcast() {
-    const { game, playerHands, chancellorPool, chancellorActorId } = this.state
+    const { game, playerHands, chancellorPool, chancellorActorId, pendingReveal } = this.state
     for (const conn of this.room.getConnections()) {
       const playerId = this.state.connToPlayerId[conn.id]
       const yourHand = playerId ? (playerHands[playerId] ?? []) : []
@@ -145,9 +147,13 @@ export default class LoveLetterServer implements Party.Server {
         state: game,
         yourHand,
         chancellorOptions: isChancellorActor ? chancellorPool : undefined,
+        revealedCard: pendingReveal?.forPlayerId === playerId ? pendingReveal.card : undefined,
+        revealedFromId: pendingReveal?.forPlayerId === playerId ? pendingReveal.targetId : undefined,
       }
       conn.send(JSON.stringify(msg))
     }
+    // Clear after sending so it only shows once
+    this.state.pendingReveal = null
   }
 
   private sendError(conn: Party.Connection, message: string) {
@@ -374,6 +380,10 @@ export default class LoveLetterServer implements Party.Server {
     this.state.game.drawnCard = null
     this.state.game.lastAction = result.log
 
+    if (result.revealedCard && targetPlayerId) {
+      this.state.pendingReveal = { forPlayerId: playerId, card: result.revealedCard, targetId: targetPlayerId }
+    }
+
     if (result.chancellorOptions && result.chancellorOptions.length > 0) {
       this.state.game.phase = 'chancellor'
       this.state.game.chancellorOptions = result.chancellorOptions
@@ -467,7 +477,7 @@ export default class LoveLetterServer implements Party.Server {
     this.state.game.players = this.state.game.players.map(p => {
       let tokens = p.tokens
       if (p.id === winner?.id) tokens += 1
-      if (spyBonusIds.includes(p.id) && p.id !== winner?.id) tokens += 1
+      if (spyBonusIds.includes(p.id)) tokens += 1
       return { ...p, tokens }
     })
 

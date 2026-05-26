@@ -9,8 +9,11 @@ export interface GameHook {
   yourHand: Card[]
   myPlayerId: string | null
   chancellorOptions: Card[] | null
+  revealedCard: Card | null
+  revealedFromId: string | null
   errorMsg: string | null
   connectionStatus: ConnectionStatus
+  dismissReveal: () => void
   join: (name: string) => void
   addBot: () => void
   startGame: () => void
@@ -25,6 +28,8 @@ export function useGame(roomId: string | null): GameHook {
   const [yourHand, setYourHand] = useState<Card[]>([])
   const [myPlayerId, setMyPlayerId] = useState<string | null>(null)
   const [chancellorOptions, setChancellorOptions] = useState<Card[] | null>(null)
+  const [revealedCard, setRevealedCard] = useState<Card | null>(null)
+  const [revealedFromId, setRevealedFromId] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connecting')
   const socketRef = useRef<PartySocket | null>(null)
@@ -59,6 +64,10 @@ export function useGame(roomId: string | null): GameHook {
         setState(msg.state)
         setYourHand(msg.yourHand)
         setChancellorOptions(msg.chancellorOptions ?? null)
+        if (msg.revealedCard) {
+          setRevealedCard(msg.revealedCard)
+          setRevealedFromId(msg.revealedFromId ?? null)
+        }
       } else if (msg.type === 'error') {
         setErrorMsg(msg.message)
       }
@@ -93,5 +102,13 @@ export function useGame(roomId: string | null): GameHook {
   const nextRound = useCallback(() => send({ type: 'nextRound' }), [send])
   const clearError = useCallback(() => setErrorMsg(null), [])
 
-  return { state, yourHand, myPlayerId, chancellorOptions, errorMsg, connectionStatus, join, addBot, startGame, playCard, chancellorKeep, nextRound, clearError }
+  useEffect(() => {
+    if (!errorMsg) return
+    const t = setTimeout(() => setErrorMsg(null), 3000)
+    return () => clearTimeout(t)
+  }, [errorMsg])
+
+  const dismissReveal = useCallback(() => { setRevealedCard(null); setRevealedFromId(null) }, [])
+
+  return { state, yourHand, myPlayerId, chancellorOptions, revealedCard, revealedFromId, errorMsg, connectionStatus, join, addBot, startGame, playCard, chancellorKeep, nextRound, clearError, dismissReveal }
 }

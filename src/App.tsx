@@ -4,6 +4,7 @@ import { Home } from './components/Home'
 import { Lobby } from './components/Lobby'
 import { GameBoard } from './components/GameBoard'
 import { RoundEnd } from './components/RoundEnd'
+import { PeekModal } from './components/PeekModal'
 
 function getInitialRoomId(): string | null {
   const hash = window.location.hash.slice(1).trim()
@@ -30,6 +31,8 @@ export default function App() {
     yourHand,
     myPlayerId,
     chancellorOptions,
+    revealedCard,
+    revealedFromId,
     errorMsg,
     connectionStatus,
     join,
@@ -39,6 +42,7 @@ export default function App() {
     chancellorKeep,
     nextRound,
     clearError,
+    dismissReveal,
   } = useGame(roomId)
 
   if (!roomId) {
@@ -83,6 +87,13 @@ export default function App() {
       />
       {(state.phase === 'roundEnd' || state.phase === 'gameOver') && (
         <RoundEnd state={state} myPlayerId={myPlayerId} onNextRound={nextRound} />
+      )}
+      {revealedCard && (
+        <PeekModal
+          card={revealedCard}
+          target={state.players.find(p => p.id === revealedFromId)}
+          onClose={dismissReveal}
+        />
       )}
     </div>
   )

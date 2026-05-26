@@ -56,7 +56,7 @@ export type ClientMessage =
 
 // Messages from server to client
 export type ServerMessage =
-  | { type: 'gameState'; state: GameState; yourHand: Card[]; chancellorOptions?: Card[] }
+  | { type: 'gameState'; state: GameState; yourHand: Card[]; chancellorOptions?: Card[]; revealedCard?: Card; revealedFromId?: string }
   | { type: 'error'; message: string }
 
 export interface CardInfo {

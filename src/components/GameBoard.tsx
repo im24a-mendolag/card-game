@@ -41,8 +41,31 @@ export function GameBoard({
   const handCard = yourHand[0] ?? null
   const drawnCard = isMyTurn && state.phase === 'playing' ? state.drawnCard : null
 
+  // Countess rule: if holding Countess + King/Prince, must play Countess
+  const mustPlayCountess = !!(handCard && drawnCard && (
+    [handCard, drawnCard].some(c => c.name === 'Countess') &&
+    [handCard, drawnCard].some(c => c.name === 'King' || c.name === 'Prince')
+  ))
+  const countessIndex = mustPlayCountess
+    ? (handCard?.name === 'Countess' ? 0 : 1)
+    : null
+
   const handleCardClick = (card: Card, index: number) => {
     if (!isMyTurn || state.phase !== 'playing' || !state.drawnCard) return
+    // Countess rule: redirect any click to play the Countess
+    if (mustPlayCountess && countessIndex !== null && card.name !== 'Countess') {
+      onPlayCard(countessIndex)
+      return
+    }
+    // Cards that need a target but have no valid targets — skip the modal and play immediately
+    const needsTarget = ['Guard', 'Priest', 'Baron', 'King'].includes(card.name)
+    const hasValidTarget = state.players.some(
+      p => p.id !== myPlayerId && !p.isEliminated && !p.isProtected,
+    )
+    if (needsTarget && !hasValidTarget) {
+      onPlayCard(index)
+      return
+    }
     setPendingCard({ card, index })
   }
 
@@ -354,33 +377,35 @@ export function GameBoard({
             </div>
           )}
 
+          {mustPlayCountess && (
+            <div style={{ fontSize: 12, color: '#ff9800', background: 'rgba(255,152,0,0.12)', border: '1px solid rgba(255,152,0,0.3)', borderRadius: 8, padding: '4px 14px' }}>
+              ⚠️ Must discard Countess (holding King or Prince)
+            </div>
+          )}
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
             {handCard && (
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', opacity: mustPlayCountess && handCard.name !== 'Countess' ? 0.35 : 1, transition: 'opacity 0.2s' }}>
                 {drawnCard && <div style={{ fontSize: 10, opacity: 0.45, marginBottom: 4 }}>HAND</div>}
                 <CardView
                   card={handCard}
                   size="lg"
                   selected={pendingCard?.index === 0}
                   onClick={() => drawnCard && handleCardClick(handCard, 0)}
-                  glow={isMyTurn && !!drawnCard}
+                  glow={isMyTurn && !!drawnCard && (!mustPlayCountess || handCard.name === 'Countess')}
                 />
               </div>
             )}
             {drawnCard && (
-              <div style={{ textAlign: 'center' }}>
+              <div style={{ textAlign: 'center', opacity: mustPlayCountess && drawnCard.name !== 'Countess' ? 0.35 : 1, transition: 'opacity 0.2s' }}>
                 <div style={{ fontSize: 10, color: '#f0c040', opacity: 0.8, marginBottom: 4 }}>DRAWN</div>
                 <CardView
                   card={drawnCard}
                   size="lg"
                   selected={pendingCard?.index === 1}
                   onClick={() => handleCardClick(drawnCard, 1)}
-                  glow
+                  glow={!mustPlayCountess || drawnCard.name === 'Countess'}
                 />
               </div>
-            )}
-            {!isMyTurn && handCard && !drawnCard && (
-              <CardView card={handCard} size="lg" />
             )}
           </div>
         </div>

@@ -119,6 +119,12 @@ export function resolvePlayCard(params: {
   newHands.set(actingPlayerId, [kept])
   const newDeck = [...deck]
 
+  // Players that can legally be targeted (alive, not self for most cards, not protected)
+  const validOpponents = state.players.filter(
+    p => p.id !== actingPlayerId && !p.isEliminated && !p.isProtected,
+  )
+  const noValidTargets = validOpponents.length === 0
+
   let log = `${actor.name} played ${played.name}`
   let eliminatedId: string | undefined
   let revealedCard: Card | undefined
@@ -130,6 +136,11 @@ export function resolvePlayCard(params: {
       break
 
     case 'Guard': {
+      // If all opponents are protected, the Guard is discarded with no effect
+      if (noValidTargets) {
+        log += ` → no valid targets, discarded with no effect`
+        break
+      }
       if (!targetPlayerId || !guessedCard) return { ok: false, error: 'Guard requires a target and a guess' }
       if (guessedCard === 'Guard') return { ok: false, error: 'Cannot guess Guard' }
       const target = state.players.find(p => p.id === targetPlayerId)
@@ -149,6 +160,10 @@ export function resolvePlayCard(params: {
     }
 
     case 'Priest': {
+      if (noValidTargets) {
+        log += ` → no valid targets, discarded with no effect`
+        break
+      }
       if (!targetPlayerId) return { ok: false, error: 'Priest requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
@@ -162,6 +177,10 @@ export function resolvePlayCard(params: {
     }
 
     case 'Baron': {
+      if (noValidTargets) {
+        log += ` → no valid targets, discarded with no effect`
+        break
+      }
       if (!targetPlayerId) return { ok: false, error: 'Baron requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
@@ -224,6 +243,10 @@ export function resolvePlayCard(params: {
     }
 
     case 'King': {
+      if (noValidTargets) {
+        log += ` → no valid targets, discarded with no effect`
+        break
+      }
       if (!targetPlayerId) return { ok: false, error: 'King requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
