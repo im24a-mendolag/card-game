@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { GameState, Player } from '../types'
 import type { ConnectionStatus } from '../hooks/useGame'
 
@@ -71,7 +71,6 @@ function PlayerRow({ player, isMe }: { player: Player; isMe: boolean }) {
 }
 
 export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, onAddBot, roomId, initialName = '' }: Props) {
-  const [name, setName] = useState(initialName)
   const [joined, setJoined] = useState(false)
 
   const me = state?.players.find(p => p.id === myPlayerId)
@@ -80,19 +79,13 @@ export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, on
     if (me) setJoined(true)
   }, [me])
 
-  // Auto-join once connected when name was pre-filled from Home
+  // Auto-join once connected
   useEffect(() => {
     if (initialName && connectionStatus === 'connected' && !joined && !me) {
       onJoin(initialName)
       setJoined(true)
     }
   }, [connectionStatus, initialName, joined, me, onJoin])
-
-  const handleJoin = () => {
-    if (!name.trim()) return
-    onJoin(name.trim())
-    setJoined(true)
-  }
 
   const playerCount = state?.players.length ?? 0
   const tokensNeeded = TOKENS_TO_WIN[playerCount] ?? '—'
@@ -170,54 +163,6 @@ export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, on
 
       {/* Main panel */}
       <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-        {/* Join form — hidden when name was pre-filled from Home screen */}
-        {!joined && !initialName && (
-          <div
-            style={{
-              background: 'rgba(0,0,0,0.3)',
-              borderRadius: 14,
-              padding: 20,
-              border: '1px solid rgba(255,255,255,0.1)',
-              display: 'flex',
-              gap: 10,
-            }}
-          >
-            <input
-              type="text"
-              maxLength={16}
-              placeholder="Enter your name…"
-              value={name}
-              onChange={e => setName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleJoin()}
-              style={{
-                flex: 1,
-                padding: '10px 14px',
-                borderRadius: 8,
-                border: '1px solid rgba(255,255,255,0.2)',
-                background: 'rgba(255,255,255,0.1)',
-                color: '#f5f0e8',
-                fontSize: 15,
-                outline: 'none',
-              }}
-            />
-            <button
-              onClick={handleJoin}
-              disabled={!name.trim()}
-              style={{
-                padding: '10px 20px',
-                borderRadius: 8,
-                background: name.trim() ? '#f0c040' : 'rgba(255,255,255,0.1)',
-                color: name.trim() ? '#1a1a1a' : 'rgba(255,255,255,0.4)',
-                fontWeight: 'bold',
-                fontSize: 14,
-                transition: 'all 0.15s',
-              }}
-            >
-              Join
-            </button>
-          </div>
-        )}
 
         {/* Player list */}
         {playerCount > 0 && (
