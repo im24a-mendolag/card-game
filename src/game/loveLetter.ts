@@ -191,12 +191,12 @@ export function resolvePlayCard(params: {
         const theirCard = newHands.get(targetPlayerId)?.[0]!
         if (myCard.value > theirCard.value) {
           eliminatedId = targetPlayerId
-          log += ` → compared ${myCard.name}(${myCard.value}) vs ${theirCard.name}(${theirCard.value}), ${target.name} eliminated`
+          log += ` → ${target.name} eliminated`
         } else if (myCard.value < theirCard.value) {
           eliminatedId = actingPlayerId
-          log += ` → compared ${myCard.name}(${myCard.value}) vs ${theirCard.name}(${theirCard.value}), ${actor.name} eliminated`
+          log += ` → ${actor.name} eliminated`
         } else {
-          log += ` → tie! Both safe (${myCard.name} vs ${theirCard.name})`
+          log += ` → tie, both safe`
         }
       }
       break

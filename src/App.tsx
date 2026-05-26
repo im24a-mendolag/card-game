@@ -88,7 +88,16 @@ export default function App() {
         onClearError={clearError}
       />
       {(state.phase === 'roundEnd' || state.phase === 'gameOver') && (
-        <RoundEnd state={state} myPlayerId={myPlayerId} onNextRound={nextRound} />
+        <RoundEnd
+          state={state}
+          myPlayerId={myPlayerId}
+          onNextRound={nextRound}
+          onPlayAgain={() => {
+            window.location.hash = ''
+            setRoomId(null)
+            setPendingName('')
+          }}
+        />
       )}
       {revealedCard && (
         <PeekModal

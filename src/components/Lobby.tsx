@@ -171,8 +171,8 @@ export function Lobby({ state, myPlayerId, connectionStatus, onJoin, onStart, on
       {/* Main panel */}
       <div style={{ width: '100%', maxWidth: 480, display: 'flex', flexDirection: 'column', gap: 16 }}>
 
-        {/* Join form */}
-        {!joined && (
+        {/* Join form — hidden when name was pre-filled from Home screen */}
+        {!joined && !initialName && (
           <div
             style={{
               background: 'rgba(0,0,0,0.3)',

@@ -29,8 +29,10 @@ function makeInitialState(): ServerState {
       roundNumber: 0,
       drawnCard: null,
       lastAction: null,
+      actionLog: [],
       winner: null,
       roundWinner: null,
+      roundEndReason: null,
       burnedCard: null,
       chancellorOptions: null,
     },
@@ -89,16 +91,18 @@ function botDecide(
     // No valid target — play the other card instead (if it doesn't need a target)
     const other = all[1 - cardIndex]
     if (!['Guard', 'Priest', 'Baron', 'King'].includes(other.name)) {
-      return { cardIndex: 1 - cardIndex }
+      // Prince always needs a target — self-target as fallback
+      const targetId = other.name === 'Prince' ? botId : undefined
+      return { cardIndex: 1 - cardIndex, targetId }
     }
-    // Both need targets but none available — play original, server will handle gracefully
+    // Both need targets but none available — play original, server handles via noValidTargets
     return { cardIndex }
   }
 
   if (card.name === 'Guard') {
     if (!target) return { cardIndex }
     // Guess the most common remaining non-Guard card (simple: pick random)
-    const guessable: CardName[] = ['Priest', 'Baron', 'Handmaid', 'Prince', 'Chancellor', 'King', 'Countess', 'Princess']
+    const guessable: CardName[] = ['Spy', 'Priest', 'Baron', 'Handmaid', 'Prince', 'Chancellor', 'King', 'Countess', 'Princess']
     const guessedCard = guessable[Math.floor(Math.random() * guessable.length)]
     return { cardIndex, targetId: target.id, guessedCard }
   }
@@ -273,8 +277,11 @@ export default class LoveLetterServer implements Party.Server {
     this.state.game.deckCount = deck.length
     this.state.game.burnedCard = burnedCard
     this.state.game.roundWinner = null
+    this.state.game.roundEndReason = null
     this.state.game.chancellorOptions = null
-    this.state.game.lastAction = `Round ${this.state.game.roundNumber} started!`
+    const startMsg = `Round ${this.state.game.roundNumber} started!`
+    this.state.game.lastAction = startMsg
+    this.state.game.actionLog = [startMsg]
     this.state.chancellorPool = []
     this.state.chancellorActorId = null
 
@@ -314,7 +321,13 @@ export default class LoveLetterServer implements Party.Server {
       this.state.playerHands,
     )
 
-    this.executePlay(botId, cardIndex, targetId, guessedCard)
+    const err = this.executePlay(botId, cardIndex, targetId, guessedCard)
+    if (err) {
+      // Fallback: play the other card; if it's Prince, self-target
+      const fallbackIndex = 1 - cardIndex
+      const fallbackCard = all[fallbackIndex]
+      this.executePlay(botId, fallbackIndex, fallbackCard.name === 'Prince' ? botId : undefined)
+    }
   }
 
   private handlePlayCard(
@@ -384,6 +397,7 @@ export default class LoveLetterServer implements Party.Server {
 
     this.state.game.drawnCard = null
     this.state.game.lastAction = result.log
+    this.state.game.actionLog = [...this.state.game.actionLog, result.log]
 
     if (result.revealedCard && targetPlayerId) {
       this.sendToPlayer(playerId, { type: 'peek', card: result.revealedCard, fromId: targetPlayerId })
@@ -479,6 +493,14 @@ export default class LoveLetterServer implements Party.Server {
     const winner = getRoundWinner(this.state.game.players, handsMap)
     const spyBonusIds = checkSpyBonus(this.state.game.players)
 
+    // Capture why the round ended before overwriting lastAction
+    const activePlayers = this.state.game.players.filter(p => !p.isEliminated)
+    if (activePlayers.length <= 1) {
+      this.state.game.roundEndReason = this.state.game.lastAction ?? null
+    } else {
+      this.state.game.roundEndReason = 'The deck ran out — survivors compared hands'
+    }
+
     this.state.game.players = this.state.game.players.map(p => {
       let tokens = p.tokens
       if (p.id === winner?.id) tokens += 1
@@ -503,6 +525,7 @@ export default class LoveLetterServer implements Party.Server {
         ? `${winner.name} wins the round!${spyMsg}`
         : `Round ended — no winner${spyMsg}`
     }
+    this.state.game.actionLog = [...this.state.game.actionLog, this.state.game.lastAction!]
 
     this.broadcast()
   }

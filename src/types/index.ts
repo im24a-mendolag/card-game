@@ -38,8 +38,10 @@ export interface GameState {
   roundNumber: number
   drawnCard: Card | null
   lastAction: string | null
+  actionLog: string[]
   winner: string | null
   roundWinner: string | null
+  roundEndReason: string | null
   burnedCard: Card | null
   // Chancellor phase: the two extra cards to choose from
   chancellorOptions: Card[] | null
@@ -152,4 +154,4 @@ export const CARD_INFO: Record<CardName, CardInfo> = {
   },
 }
 
-export const GUARD_TARGETS: CardName[] = ['Priest', 'Baron', 'Handmaid', 'Prince', 'Chancellor', 'King', 'Countess', 'Princess']
+export const GUARD_TARGETS: CardName[] = ['Spy', 'Priest', 'Baron', 'Handmaid', 'Prince', 'Chancellor', 'King', 'Countess', 'Princess']

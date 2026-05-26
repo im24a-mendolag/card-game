@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { Card, CardName, GameState } from '../types'
 import { CARD_INFO } from '../types'
 import { CardView } from './CardView'
@@ -30,6 +30,10 @@ export function GameBoard({
   onClearError,
 }: Props) {
   const [pendingCard, setPendingCard] = useState<{ card: Card; index: number } | null>(null)
+  const logRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (logRef.current) logRef.current.scrollTop = logRef.current.scrollHeight
+  }, [state.actionLog.length])
 
   const me = state.players.find(p => p.id === myPlayerId)
   const others = state.players.filter(p => p.id !== myPlayerId)
@@ -52,11 +56,6 @@ export function GameBoard({
 
   const handleCardClick = (card: Card, index: number) => {
     if (!isMyTurn || state.phase !== 'playing' || !state.drawnCard) return
-    // Countess rule: redirect any click to play the Countess
-    if (mustPlayCountess && countessIndex !== null && card.name !== 'Countess') {
-      onPlayCard(countessIndex)
-      return
-    }
     // Cards that need a target but have no valid targets — skip the modal and play immediately
     const needsTarget = ['Guard', 'Priest', 'Baron', 'King'].includes(card.name)
     const hasValidTarget = state.players.some(
@@ -175,6 +174,34 @@ export function GameBoard({
             {isMyTurn ? '⭐ Your turn!' : currentPlayer?.name ?? '—'}
           </div>
         </div>
+
+        {/* Action log */}
+        {state.actionLog.length > 0 && (
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 10, opacity: 0.5, letterSpacing: 2, marginBottom: 6 }}>EVENT LOG</div>
+            <div ref={logRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+              {state.actionLog.map((entry, i) => {
+                const isLatest = i === state.actionLog.length - 1
+                return (
+                  <div
+                    key={i}
+                    style={{
+                      fontSize: 10,
+                      lineHeight: 1.4,
+                      padding: '4px 6px',
+                      borderRadius: 6,
+                      background: isLatest ? 'rgba(240,192,64,0.08)' : 'rgba(255,255,255,0.03)',
+                      border: isLatest ? '1px solid rgba(240,192,64,0.2)' : '1px solid rgba(255,255,255,0.05)',
+                      color: isLatest ? '#f0c040' : 'rgba(245,240,232,0.55)',
+                    }}
+                  >
+                    {entry}
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── MAIN TABLE ── */}
@@ -267,11 +294,12 @@ export function GameBoard({
                       title={c.name}
                       style={{
                         fontSize: 11,
-                        background: `${CARD_INFO[c.name].color}25`,
-                        border: `1px solid ${CARD_INFO[c.name].color}60`,
+                        background: 'rgba(20,20,20,0.85)',
+                        border: `1px solid ${CARD_INFO[c.name].color}`,
                         borderRadius: 4,
-                        padding: '1px 4px',
+                        padding: '1px 5px',
                         color: CARD_INFO[c.name].color,
+                        fontWeight: 'bold',
                       }}
                     >
                       {CARD_INFO[c.name].emoji}{c.value}
@@ -294,23 +322,6 @@ export function GameBoard({
             gap: 14,
           }}
         >
-          {/* Action log */}
-          {state.lastAction && (
-            <div
-              style={{
-                background: 'rgba(0,0,0,0.3)',
-                borderRadius: 10,
-                padding: '8px 18px',
-                fontSize: 13,
-                opacity: 0.85,
-                textAlign: 'center',
-                maxWidth: 460,
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              📜 {state.lastAction}
-            </div>
-          )}
 
           {/* Deck + my discard */}
           <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end' }}>
@@ -339,7 +350,11 @@ export function GameBoard({
             {me && me.discardPile.length > 0 && (
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 10, opacity: 0.4, letterSpacing: 1, marginBottom: 4 }}>YOUR DISCARD</div>
-                <CardView card={me.discardPile[me.discardPile.length - 1]} size="md" />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+                  {me.discardPile.map((c, i) => (
+                    <CardView key={i} card={c} size="sm" />
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -383,29 +398,44 @@ export function GameBoard({
             </div>
           )}
           <div style={{ display: 'flex', gap: 16, alignItems: 'flex-end' }}>
-            {handCard && (
-              <div style={{ textAlign: 'center', opacity: mustPlayCountess && handCard.name !== 'Countess' ? 0.35 : 1, transition: 'opacity 0.2s' }}>
-                {drawnCard && <div style={{ fontSize: 10, opacity: 0.45, marginBottom: 4 }}>HAND</div>}
-                <CardView
-                  card={handCard}
-                  size="lg"
-                  selected={pendingCard?.index === 0}
-                  onClick={() => drawnCard && handleCardClick(handCard, 0)}
-                  glow={isMyTurn && !!drawnCard && (!mustPlayCountess || handCard.name === 'Countess')}
-                />
+            {me?.isEliminated ? (
+              <div style={{ textAlign: 'center', opacity: 0.25, filter: 'grayscale(1)', position: 'relative' }}>
+                <CardView card={null} faceDown size="lg" />
+                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>❌</div>
               </div>
-            )}
-            {drawnCard && (
-              <div style={{ textAlign: 'center', opacity: mustPlayCountess && drawnCard.name !== 'Countess' ? 0.35 : 1, transition: 'opacity 0.2s' }}>
-                <div style={{ fontSize: 10, color: '#f0c040', opacity: 0.8, marginBottom: 4 }}>DRAWN</div>
-                <CardView
-                  card={drawnCard}
-                  size="lg"
-                  selected={pendingCard?.index === 1}
-                  onClick={() => handleCardClick(drawnCard, 1)}
-                  glow={!mustPlayCountess || drawnCard.name === 'Countess'}
-                />
-              </div>
+            ) : (
+              <>
+                {handCard && (() => {
+                  const locked = mustPlayCountess && handCard.name !== 'Countess'
+                  return (
+                    <div style={{ textAlign: 'center', opacity: locked ? 0.35 : 1, pointerEvents: locked ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                      {drawnCard && <div style={{ fontSize: 10, opacity: 0.45, marginBottom: 4 }}>HAND</div>}
+                      <CardView
+                        card={handCard}
+                        size="lg"
+                        selected={pendingCard?.index === 0}
+                        onClick={() => drawnCard && handleCardClick(handCard, 0)}
+                        glow={isMyTurn && !!drawnCard && !locked}
+                      />
+                    </div>
+                  )
+                })()}
+                {drawnCard && (() => {
+                  const locked = mustPlayCountess && drawnCard.name !== 'Countess'
+                  return (
+                    <div style={{ textAlign: 'center', opacity: locked ? 0.35 : 1, pointerEvents: locked ? 'none' : 'auto', transition: 'opacity 0.2s' }}>
+                      <div style={{ fontSize: 10, color: '#f0c040', opacity: 0.8, marginBottom: 4 }}>DRAWN</div>
+                      <CardView
+                        card={drawnCard}
+                        size="lg"
+                        selected={pendingCard?.index === 1}
+                        onClick={() => handleCardClick(drawnCard, 1)}
+                        glow={!locked}
+                      />
+                    </div>
+                  )
+                })()}
+              </>
             )}
           </div>
         </div>

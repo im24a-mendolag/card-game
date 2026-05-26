@@ -5,15 +5,18 @@ interface Props {
   state: GameState
   myPlayerId: string | null
   onNextRound: () => void
+  onPlayAgain: () => void
 }
 
-export function RoundEnd({ state, myPlayerId, onNextRound }: Props) {
+export function RoundEnd({ state, myPlayerId, onNextRound, onPlayAgain }: Props) {
   const me = state.players.find(p => p.id === myPlayerId)
   const isHost = me?.isHost
   const isGameOver = state.phase === 'gameOver'
   const tokensToWin = state.players.length === 2 ? 7 : state.players.length === 3 ? 5 : 4
 
   const activePlayers = state.players.filter(p => !p.isEliminated)
+  const iWon = me && state.roundWinner === me.name
+  const iAmEliminated = me?.isEliminated
 
   return (
     <div
@@ -61,9 +64,49 @@ export function RoundEnd({ state, myPlayerId, onNextRound }: Props) {
               Round {state.roundNumber} Over
             </h2>
             {state.roundWinner && (
-              <p style={{ fontSize: 16, opacity: 0.85, marginBottom: 20 }}>
+              <p style={{ fontSize: 16, opacity: 0.85, marginBottom: 10 }}>
                 <strong style={{ color: '#f0c040' }}>{state.roundWinner}</strong> wins this round!
               </p>
+            )}
+
+            {/* Personal outcome */}
+            {me && (
+              <div
+                style={{
+                  display: 'inline-block',
+                  padding: '5px 16px',
+                  borderRadius: 20,
+                  fontSize: 13,
+                  fontWeight: 'bold',
+                  marginBottom: 12,
+                  background: iWon
+                    ? 'rgba(76,175,80,0.18)'
+                    : iAmEliminated
+                    ? 'rgba(192,57,43,0.18)'
+                    : 'rgba(255,255,255,0.08)',
+                  color: iWon ? '#4caf50' : iAmEliminated ? '#e57373' : '#f5f0e8',
+                  border: `1px solid ${iWon ? 'rgba(76,175,80,0.4)' : iAmEliminated ? 'rgba(229,115,115,0.4)' : 'rgba(255,255,255,0.15)'}`,
+                }}
+              >
+                {iWon ? '🏅 You won this round!' : iAmEliminated ? '💀 You were eliminated' : '😮 You survived but lost'}
+              </div>
+            )}
+
+            {/* Round end reason */}
+            {state.roundEndReason && (
+              <div
+                style={{
+                  background: 'rgba(0,0,0,0.25)',
+                  borderRadius: 10,
+                  padding: '8px 14px',
+                  fontSize: 12,
+                  opacity: 0.75,
+                  marginBottom: 20,
+                  border: '1px solid rgba(255,255,255,0.08)',
+                }}
+              >
+                📜 {state.roundEndReason}
+              </div>
             )}
           </>
         )}
@@ -138,7 +181,7 @@ export function RoundEnd({ state, myPlayerId, onNextRound }: Props) {
 
         {isGameOver ? (
           <button
-            onClick={() => window.location.reload()}
+            onClick={onPlayAgain}
             style={{
               padding: '14px 40px',
               borderRadius: 12,
