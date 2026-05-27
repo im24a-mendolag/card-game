@@ -301,7 +301,7 @@ export default class LoveLetterServer implements Party.Server {
 
     if (player.isBot) {
       // Delay so players can see the board update before the bot acts
-      setTimeout(() => this.botPlay(player.id), 1400)
+      setTimeout(() => this.botPlay(player.id), 2200 + Math.random() * 1200)
     }
   }
 
@@ -391,7 +391,15 @@ export default class LoveLetterServer implements Party.Server {
           hand: selfEliminated ? [] : (this.state.playerHands[p.id] ?? []),
         }
       }
-      if (p.id === result.eliminatedId) return { ...p, isEliminated: true, hand: [] }
+      if (p.id === result.eliminatedId) {
+        const eliminatedCard = this.state.playerHands[p.id]?.[0]
+        return {
+          ...p,
+          isEliminated: true,
+          hand: [],
+          discardPile: eliminatedCard ? [...p.discardPile, eliminatedCard] : p.discardPile,
+        }
+      }
       return { ...p, hand: this.state.playerHands[p.id] ?? [] }
     })
 
@@ -413,7 +421,7 @@ export default class LoveLetterServer implements Party.Server {
       // If the bot played Chancellor, auto-resolve it
       const actor = this.state.game.players.find(p => p.id === playerId)
       if (actor?.isBot) {
-        setTimeout(() => this.botChancellorKeep(playerId), 1000)
+        setTimeout(() => this.botChancellorKeep(playerId), 1400 + Math.random() * 800)
       }
       return
     }
