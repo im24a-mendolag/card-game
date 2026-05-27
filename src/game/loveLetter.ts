@@ -136,7 +136,6 @@ export function resolvePlayCard(params: {
       break
 
     case 'Guard': {
-      // If all opponents are protected, the Guard is discarded with no effect
       if (noValidTargets) {
         log += ` → no valid targets, discarded with no effect`
         break
@@ -145,16 +144,12 @@ export function resolvePlayCard(params: {
       if (guessedCard === 'Guard') return { ok: false, error: 'Cannot guess Guard' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
-      if (target.isProtected) {
-        log += ` → ${target.name} is protected`
+      const targetCard = newHands.get(targetPlayerId)?.[0]
+      if (targetCard?.name === guessedCard) {
+        eliminatedId = targetPlayerId
+        log += ` on ${target.name} → guessed ${guessedCard} correctly! ${target.name} eliminated`
       } else {
-        const targetCard = newHands.get(targetPlayerId)?.[0]
-        if (targetCard?.name === guessedCard) {
-          eliminatedId = targetPlayerId
-          log += ` → guessed ${guessedCard} correctly! ${target.name} eliminated`
-        } else {
-          log += ` → guessed ${guessedCard}, wrong`
-        }
+        log += ` on ${target.name} → guessed ${guessedCard}, wrong`
       }
       break
     }
@@ -167,12 +162,8 @@ export function resolvePlayCard(params: {
       if (!targetPlayerId) return { ok: false, error: 'Priest requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
-      if (target.isProtected) {
-        log += ` → ${target.name} is protected`
-      } else {
-        revealedCard = newHands.get(targetPlayerId)?.[0]
-        log += ` → peeked at ${target.name}'s hand`
-      }
+      revealedCard = newHands.get(targetPlayerId)?.[0]
+      log += ` on ${target.name} → peeked at ${target.name}'s hand`
       break
     }
 
@@ -184,20 +175,16 @@ export function resolvePlayCard(params: {
       if (!targetPlayerId) return { ok: false, error: 'Baron requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
-      if (target.isProtected) {
-        log += ` → ${target.name} is protected`
+      const myCard = kept
+      const theirCard = newHands.get(targetPlayerId)?.[0]!
+      if (myCard.value > theirCard.value) {
+        eliminatedId = targetPlayerId
+        log += ` on ${target.name} → ${target.name} eliminated`
+      } else if (myCard.value < theirCard.value) {
+        eliminatedId = actingPlayerId
+        log += ` on ${target.name} → ${actor.name} eliminated`
       } else {
-        const myCard = kept
-        const theirCard = newHands.get(targetPlayerId)?.[0]!
-        if (myCard.value > theirCard.value) {
-          eliminatedId = targetPlayerId
-          log += ` → ${target.name} eliminated`
-        } else if (myCard.value < theirCard.value) {
-          eliminatedId = actingPlayerId
-          log += ` → ${actor.name} eliminated`
-        } else {
-          log += ` → tie, both safe`
-        }
+        log += ` on ${target.name} → tie, both safe`
       }
       break
     }
@@ -210,20 +197,16 @@ export function resolvePlayCard(params: {
       if (!targetPlayerId) return { ok: false, error: 'Prince requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
-      if (target.isProtected && targetPlayerId !== actingPlayerId) {
-        log += ` → ${target.name} is protected`
+      const targetHand = newHands.get(targetPlayerId)!
+      const discarded = targetHand[0]
+      if (discarded?.name === 'Princess') {
+        eliminatedId = targetPlayerId
+        newHands.set(targetPlayerId, [])
+        log += ` on ${target.name} → ${target.name} discarded Princess and is eliminated!`
       } else {
-        const targetHand = newHands.get(targetPlayerId)!
-        const discarded = targetHand[0]
-        if (discarded?.name === 'Princess') {
-          eliminatedId = targetPlayerId
-          newHands.set(targetPlayerId, [])
-          log += ` → ${target.name} discarded Princess and is eliminated!`
-        } else {
-          const newCard = newDeck.pop()
-          newHands.set(targetPlayerId, newCard ? [newCard] : [])
-          log += ` → ${target.name} discarded ${discarded?.name} and drew a new card`
-        }
+        const newCard = newDeck.pop()
+        newHands.set(targetPlayerId, newCard ? [newCard] : [])
+        log += ` on ${target.name} → ${target.name} discarded ${discarded?.name} and drew a new card`
       }
       break
     }
@@ -250,15 +233,11 @@ export function resolvePlayCard(params: {
       if (!targetPlayerId) return { ok: false, error: 'King requires a target' }
       const target = state.players.find(p => p.id === targetPlayerId)
       if (!target || target.isEliminated) return { ok: false, error: 'Invalid target' }
-      if (target.isProtected) {
-        log += ` → ${target.name} is protected`
-      } else {
-        const myHand = newHands.get(actingPlayerId)!
-        const theirHand = newHands.get(targetPlayerId)!
-        newHands.set(actingPlayerId, theirHand)
-        newHands.set(targetPlayerId, myHand)
-        log += ` → traded hands with ${target.name}`
-      }
+      const myHand = newHands.get(actingPlayerId)!
+      const theirHand = newHands.get(targetPlayerId)!
+      newHands.set(actingPlayerId, theirHand)
+      newHands.set(targetPlayerId, myHand)
+      log += ` on ${target.name} → traded hands with ${target.name}`
       break
     }
 
