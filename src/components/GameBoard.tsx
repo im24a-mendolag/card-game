@@ -336,7 +336,7 @@ export function GameBoard({
         >
 
           {/* Deck + my discard */}
-          <div style={{ display: 'flex', gap: 20, alignItems: 'flex-end' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
             <div style={{ textAlign: 'center' }}>
               <div style={{ fontSize: 10, opacity: 0.4, letterSpacing: 1, marginBottom: 4 }}>DRAW PILE</div>
               <div style={{ position: 'relative', width: 80, height: 116 }}>
@@ -362,7 +362,7 @@ export function GameBoard({
             {me && me.discardPile.length > 0 && (
               <div style={{ textAlign: 'center' }}>
                 <div style={{ fontSize: 10, opacity: 0.4, letterSpacing: 1, marginBottom: 4 }}>YOUR DISCARD</div>
-                <div style={{ display: 'flex', gap: 6, alignItems: 'flex-end' }}>
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
                   {me.discardPile.map((c, i) => (
                     <CardView key={i} card={c} size="sm" />
                   ))}
