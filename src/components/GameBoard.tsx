@@ -180,23 +180,34 @@ export function GameBoard({
               {state.actionLog.map((entry, i) => {
                 const myName = me?.name
                 const isElim = /eliminated/i.test(entry)
+                const iAmActor = !!(myName && entry.startsWith(myName))
+                const iAmEliminated = !!(myName && isElim && (
+                  entry.includes(`${myName} eliminated`) ||
+                  entry.includes(`${myName} discarded the Princess`)
+                ))
                 const affectsMe = !!(myName && entry.includes(myName))
-                const bg = affectsMe && isElim
+                const bg = iAmEliminated
                   ? 'rgba(229,57,53,0.18)'
+                  : iAmActor
+                  ? 'rgba(76,175,80,0.12)'
                   : isElim
                   ? 'rgba(229,57,53,0.12)'
                   : affectsMe
-                  ? 'rgba(240,192,64,0.12)'
+                  ? 'rgba(240,192,64,0.10)'
                   : 'rgba(255,255,255,0.03)'
-                const border = affectsMe && isElim
+                const border = iAmEliminated
                   ? '1px solid rgba(229,57,53,0.45)'
+                  : iAmActor
+                  ? '1px solid rgba(76,175,80,0.3)'
                   : isElim
                   ? '1px solid rgba(229,57,53,0.3)'
                   : affectsMe
-                  ? '1px solid rgba(240,192,64,0.3)'
+                  ? '1px solid rgba(240,192,64,0.25)'
                   : '1px solid rgba(255,255,255,0.05)'
-                const color = affectsMe && isElim
+                const color = iAmEliminated
                   ? '#ef9a9a'
+                  : iAmActor
+                  ? '#a5d6a7'
                   : isElim
                   ? '#e57373'
                   : affectsMe
