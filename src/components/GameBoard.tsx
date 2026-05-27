@@ -178,19 +178,34 @@ export function GameBoard({
             <div style={{ fontSize: 10, opacity: 0.5, letterSpacing: 2, marginBottom: 6 }}>EVENT LOG</div>
             <div ref={logRef} style={{ flex: 1, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
               {state.actionLog.map((entry, i) => {
-                const isLatest = i === state.actionLog.length - 1
+                const myName = me?.name
+                const isElim = /eliminated/i.test(entry)
+                const affectsMe = !!(myName && entry.includes(myName))
+                const bg = affectsMe && isElim
+                  ? 'rgba(229,57,53,0.18)'
+                  : isElim
+                  ? 'rgba(229,57,53,0.12)'
+                  : affectsMe
+                  ? 'rgba(240,192,64,0.12)'
+                  : 'rgba(255,255,255,0.03)'
+                const border = affectsMe && isElim
+                  ? '1px solid rgba(229,57,53,0.45)'
+                  : isElim
+                  ? '1px solid rgba(229,57,53,0.3)'
+                  : affectsMe
+                  ? '1px solid rgba(240,192,64,0.3)'
+                  : '1px solid rgba(255,255,255,0.05)'
+                const color = affectsMe && isElim
+                  ? '#ef9a9a'
+                  : isElim
+                  ? '#e57373'
+                  : affectsMe
+                  ? '#f0c040'
+                  : 'rgba(245,240,232,0.55)'
                 return (
                   <div
                     key={i}
-                    style={{
-                      fontSize: 10,
-                      lineHeight: 1.4,
-                      padding: '4px 6px',
-                      borderRadius: 6,
-                      background: isLatest ? 'rgba(240,192,64,0.08)' : 'rgba(255,255,255,0.03)',
-                      border: isLatest ? '1px solid rgba(240,192,64,0.2)' : '1px solid rgba(255,255,255,0.05)',
-                      color: isLatest ? '#f0c040' : 'rgba(245,240,232,0.55)',
-                    }}
+                    style={{ fontSize: 10, lineHeight: 1.4, padding: '4px 6px', borderRadius: 6, background: bg, border, color }}
                   >
                     {entry}
                   </div>

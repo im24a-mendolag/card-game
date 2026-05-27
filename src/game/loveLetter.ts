@@ -297,10 +297,7 @@ export function getRoundWinner(players: Player[], hands: Map<string, Card[]>): P
 }
 
 export function checkSpyBonus(players: Player[]): string[] {
-  // Players who played/discarded a Spy get a token if they are the only one (or if only one survives having done so)
-  const spyPlayers = players.filter(
-    p => !p.isEliminated && p.discardPile.some(c => c.name === 'Spy'),
-  )
+  const spyPlayers = players.filter(p => p.discardPile.some(c => c.name === 'Spy'))
   if (spyPlayers.length === 1) return [spyPlayers[0].id]
   return []
 }
